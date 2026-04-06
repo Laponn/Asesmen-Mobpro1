@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.naufalsulthanfakhry0092.asesmenmobpro1"
+    namespace = "com.naufalsulthanfakhry0092.mobpro1"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.naufalsulthanfakhry0092.asesmenmobpro1"
+        applicationId = "com.naufalsulthanfakhry0092.mobpro1"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -48,6 +48,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,14 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BillBro</string>
-    <string name="deskripsi_aplikasi">Sering pusing ngitung patungan setelah nongkrong bareng teman?.
-        \n\nBiar nggak ada drama, gunakan aplikasi ini! Tinggal masukkan total tagihan, jumlah orang, dan opsi pajak, sistem akan otomatis membagi nominalnya dengan presisi.
-        \n\nHitung patungan jadi lebih adil, transparan, dan cepat!</string>
+    <string name="deskripsi_aplikasi">"Sering pusing ngitung patungan setelah nongkrong bareng teman?         Biar nggak ada drama, gunakan aplikasi ini! Tinggal masukkan total tagihan, jumlah orang, dan opsi pajak, sistem akan otomatis membagi nominalnya dengan presisi.         Hitung patungan jadi lebih adil, transparan, dan cepat!     "</string>
     <string name="developer">Dikembangkan oleh: Naufal Sulthan Fakhry</string>
-    <string name="jumlah_orang">Jumlah Orang</string>
     <string name="mulai_hitung">Mulai Hitung</string>
-    <string name="kembali">Kembali</string>
-    <string name="total_bill">Total tagihan</string>
+    <string name="kembali">kembali</string>
+    <string name="total_bill">Total Tagihan</string>
     <string name="nama_tagihan">Nama Bill</string>
+    <string name="jumlah_orang">Jumlah Orang</string>
     <string name="count">Hitung</string>
     <string name="share">Bagikan Hasil</string>
     <string name="pajak_opsi">Ada Pajak</string>

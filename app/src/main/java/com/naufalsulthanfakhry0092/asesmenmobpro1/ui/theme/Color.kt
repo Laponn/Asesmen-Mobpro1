@@ -9,3 +9,8 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
+
+val FreshMint = Color(0xFFE0F2F1)
+val DeepOceanText = Color(0xFF004D40)
+val SoftCloudCard = Color(0xFFF4FAF9)
+val CleanBackground = Color(0xFFFAFDFF)
