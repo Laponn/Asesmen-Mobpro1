@@ -60,21 +60,27 @@ import com.naufalsulthanfakhry0092.mobpro1.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountScreen(navController: NavHostController) {
+fun CountScreen(
+    navController: NavHostController,
+    billName: String,
+    onBillNameChange: (String) -> Unit,
+    amountText: String,
+    onAmountTextChange: (String) -> Unit,
+    peopleText: String,
+    onPeopleTextChange: (String) -> Unit,
+    useTax: Boolean,
+    onUseTaxChange: (Boolean) -> Unit,
+    taxPercentText: String,
+    onTaxPercentTextChange: (String) -> Unit,
+    result: String,
+    onResultChange: (String) -> Unit
+) {
     val context = LocalContext.current
-
-    var billName by rememberSaveable { mutableStateOf("") }
-    var amountText by rememberSaveable { mutableStateOf("") }
-    var peopleText by rememberSaveable { mutableStateOf("") }
-    var useTax by rememberSaveable { mutableStateOf(false) }
-    var taxPercentText by rememberSaveable { mutableStateOf("") }
 
     var billNameError by rememberSaveable { mutableStateOf(false) }
     var amountError by rememberSaveable { mutableStateOf(false) }
     var peopleError by rememberSaveable { mutableStateOf(false) }
     var taxError by rememberSaveable { mutableStateOf(false) }
-
-    var result by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -107,7 +113,7 @@ fun CountScreen(navController: NavHostController) {
 
             OutlinedTextField(
                 value = billName,
-                onValueChange = { billName = it },
+                onValueChange = onBillNameChange,
                 label = { Text(stringResource(id = R.string.nama_tagihan)) },
                 isError = billNameError,
                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
@@ -121,7 +127,7 @@ fun CountScreen(navController: NavHostController) {
 
             OutlinedTextField(
                 value = amountText,
-                onValueChange = { amountText = it },
+                onValueChange = onAmountTextChange,
                 label = { Text(stringResource(id = R.string.total_bill)) },
                 isError = amountError,
                 leadingIcon = {
@@ -144,7 +150,7 @@ fun CountScreen(navController: NavHostController) {
 
             OutlinedTextField(
                 value = peopleText,
-                onValueChange = { peopleText = it },
+                onValueChange = onPeopleTextChange,
                 label = { Text(stringResource(id = R.string.jumlah_orang)) },
                 isError = peopleError,
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
@@ -165,8 +171,8 @@ fun CountScreen(navController: NavHostController) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        useTax = false
-                        taxPercentText = ""
+                        onUseTaxChange(false)
+                        onTaxPercentTextChange("")
                         taxError = false
                     },
                     modifier = Modifier.weight(1f),
@@ -183,7 +189,7 @@ fun CountScreen(navController: NavHostController) {
                 }
 
                 OutlinedButton(
-                    onClick = { useTax = true },
+                    onClick = { onUseTaxChange(true) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, if (useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)),
@@ -201,7 +207,7 @@ fun CountScreen(navController: NavHostController) {
             if (useTax) {
                 OutlinedTextField(
                     value = taxPercentText,
-                    onValueChange = { taxPercentText = it },
+                    onValueChange = onTaxPercentTextChange,
                     label = { Text(stringResource(id = R.string.persentase_pajak)) },
                     isError = taxError,
                     trailingIcon = { IconPicker(taxError, "%") },
@@ -236,13 +242,17 @@ fun CountScreen(navController: NavHostController) {
                     taxError = useTax && (taxPct == null || taxPct < 0.0)
 
                     if (billNameError || amountError || peopleError || taxError) {
-                        result = ""
+                        onResultChange("")
                         return@Button
                     }
 
-                    val taxAmount = if (useTax) amount!! * (taxPct!! / 100) else 0.0
-                    val perPerson = (amount!! + taxAmount) / people!!
-                    result = "Rp ${String.format("%,.0f", perPerson)}"
+                    val safeAmount = amount ?: 0.0
+                    val safePeople = people ?: 1
+                    val safeTaxPct = taxPct ?: 0.0
+
+                    val taxAmount = if (useTax) safeAmount.times(safeTaxPct.div(100)) else 0.0
+                    val perPerson = safeAmount.plus(taxAmount).div(safePeople)
+                    onResultChange("Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", perPerson)}")
                 }
             ) {
                 Text(
@@ -303,7 +313,21 @@ fun CountScreen(navController: NavHostController) {
 @Composable
 fun CountScreenPreview() {
     AsesmenMobpro1Theme {
-        CountScreen(rememberNavController())
+        CountScreen(
+            navController = rememberNavController(),
+            billName = "",
+            onBillNameChange = {},
+            amountText = "",
+            onAmountTextChange = {},
+            peopleText = "",
+            onPeopleTextChange = {},
+            useTax = false,
+            onUseTaxChange = {},
+            taxPercentText = "",
+            onTaxPercentTextChange = {},
+            result = "",
+            onResultChange = {}
+        )
     }
 }
 
@@ -325,7 +349,7 @@ fun IconPicker(isError: Boolean, unit: String) {
 
 private fun shareData(context: Context, message: String) {
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
+        type = "text" + Char(47) + "plain"
         putExtra(Intent.EXTRA_TEXT, message)
     }
     if (shareIntent.resolveActivity(context.packageManager) != null) {
