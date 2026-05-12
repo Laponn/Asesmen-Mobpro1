@@ -18,4 +18,6 @@
     <string name="x_diklik">%1$s diklik!</string>
     <string name="tambah_tagihan">Tambah tagihan</string>
     <string name="belum_bisa">Belum bisa tambah tagihan.</string>
+    <string name="ubah_tagihan">Edit tagihan</string>
+    <string name="simpan">Simpan</string>
 </resources>

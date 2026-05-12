@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
@@ -62,20 +63,16 @@ import com.naufalsulthanfakhry0092.mobpro1.R
 @Composable
 fun CountScreen(
     navController: NavHostController,
-    billName: String,
-    onBillNameChange: (String) -> Unit,
-    amountText: String,
-    onAmountTextChange: (String) -> Unit,
-    peopleText: String,
-    onPeopleTextChange: (String) -> Unit,
-    useTax: Boolean,
-    onUseTaxChange: (Boolean) -> Unit,
-    taxPercentText: String,
-    onTaxPercentTextChange: (String) -> Unit,
-    result: String,
-    onResultChange: (String) -> Unit
+    id: Long? = null
 ) {
     val context = LocalContext.current
+
+    var billName by rememberSaveable { mutableStateOf("") }
+    var amountText by rememberSaveable { mutableStateOf("") }
+    var peopleText by rememberSaveable { mutableStateOf("") }
+    var useTax by rememberSaveable { mutableStateOf(false) }
+    var taxPercentText by rememberSaveable { mutableStateOf("") }
+    var result by rememberSaveable { mutableStateOf("") }
 
     var billNameError by rememberSaveable { mutableStateOf(false) }
     var amountError by rememberSaveable { mutableStateOf(false) }
@@ -94,11 +91,28 @@ fun CountScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
+                            contentDescription = stringResource(id = R.string.kembali)
                         )
                     }
                 },
-                title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Bold) }
+                title = {
+                    Text(
+                        text = if (id == null) {
+                            stringResource(id = R.string.tambah_tagihan)
+                        } else {
+                            stringResource(id = R.string.ubah_tagihan)
+                        },
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = stringResource(id = R.string.simpan)
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -113,7 +127,7 @@ fun CountScreen(
 
             OutlinedTextField(
                 value = billName,
-                onValueChange = onBillNameChange,
+                onValueChange = { billName = it },
                 label = { Text(stringResource(id = R.string.nama_tagihan)) },
                 isError = billNameError,
                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
@@ -127,7 +141,7 @@ fun CountScreen(
 
             OutlinedTextField(
                 value = amountText,
-                onValueChange = onAmountTextChange,
+                onValueChange = { amountText = it },
                 label = { Text(stringResource(id = R.string.total_bill)) },
                 isError = amountError,
                 leadingIcon = {
@@ -150,7 +164,7 @@ fun CountScreen(
 
             OutlinedTextField(
                 value = peopleText,
-                onValueChange = onPeopleTextChange,
+                onValueChange = { peopleText = it },
                 label = { Text(stringResource(id = R.string.jumlah_orang)) },
                 isError = peopleError,
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
@@ -171,13 +185,16 @@ fun CountScreen(
             ) {
                 OutlinedButton(
                     onClick = {
-                        onUseTaxChange(false)
-                        onTaxPercentTextChange("")
+                        useTax = false
+                        taxPercentText = ""
                         taxError = false
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, if (!useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)),
+                    border = BorderStroke(
+                        1.dp,
+                        if (!useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+                    ),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = if (!useTax) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                     )
@@ -189,10 +206,13 @@ fun CountScreen(
                 }
 
                 OutlinedButton(
-                    onClick = { onUseTaxChange(true) },
+                    onClick = { useTax = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, if (useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)),
+                    border = BorderStroke(
+                        1.dp,
+                        if (useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+                    ),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = if (useTax) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                     )
@@ -207,7 +227,7 @@ fun CountScreen(
             if (useTax) {
                 OutlinedTextField(
                     value = taxPercentText,
-                    onValueChange = onTaxPercentTextChange,
+                    onValueChange = { taxPercentText = it },
                     label = { Text(stringResource(id = R.string.persentase_pajak)) },
                     isError = taxError,
                     trailingIcon = { IconPicker(taxError, "%") },
@@ -242,7 +262,7 @@ fun CountScreen(
                     taxError = useTax && (taxPct == null || taxPct < 0.0)
 
                     if (billNameError || amountError || peopleError || taxError) {
-                        onResultChange("")
+                        result = ""
                         return@Button
                     }
 
@@ -250,9 +270,10 @@ fun CountScreen(
                     val safePeople = people ?: 1
                     val safeTaxPct = taxPct ?: 0.0
 
-                    val taxAmount = if (useTax) safeAmount.times(safeTaxPct.div(100)) else 0.0
-                    val perPerson = safeAmount.plus(taxAmount).div(safePeople)
-                    onResultChange("Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", perPerson)}")
+                    val taxAmount = if (useTax) safeAmount * (safeTaxPct / 100) else 0.0
+                    val perPerson = (safeAmount + taxAmount) / safePeople
+
+                    result = "Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", perPerson)}"
                 }
             ) {
                 Text(
@@ -266,7 +287,9 @@ fun CountScreen(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
@@ -280,7 +303,9 @@ fun CountScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+
                         Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
                             text = result,
                             style = MaterialTheme.typography.headlineLarge,
@@ -291,6 +316,7 @@ fun CountScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         val message = "Patungan $billName:\nTotal per orang jadi $result. Buruan transfer ya!"
+
                         Button(
                             onClick = { shareData(context, message) },
                             modifier = Modifier.fillMaxWidth(),
@@ -314,19 +340,7 @@ fun CountScreen(
 fun CountScreenPreview() {
     AsesmenMobpro1Theme {
         CountScreen(
-            navController = rememberNavController(),
-            billName = "",
-            onBillNameChange = {},
-            amountText = "",
-            onAmountTextChange = {},
-            peopleText = "",
-            onPeopleTextChange = {},
-            useTax = false,
-            onUseTaxChange = {},
-            taxPercentText = "",
-            onTaxPercentTextChange = {},
-            result = "",
-            onResultChange = {}
+            navController = rememberNavController()
         )
     }
 }

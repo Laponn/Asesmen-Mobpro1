@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
+import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
 import com.naufalsulthanfakhry0092.mobpro1.R
 import java.text.NumberFormat
@@ -59,7 +60,7 @@ fun MainScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    Toast.makeText(context, R.string.belum_bisa, Toast.LENGTH_SHORT).show()
+                    navController.navigate(Screen.Count.route)
                 }
             ) {
                 Icon(
