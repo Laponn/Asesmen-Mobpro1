@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
@@ -66,6 +68,7 @@ fun CountScreen(
     id: Long? = null
 ) {
     val context = LocalContext.current
+    val viewModel: MainViewModel = viewModel()
 
     var billName by rememberSaveable { mutableStateOf("") }
     var amountText by rememberSaveable { mutableStateOf("") }
@@ -78,6 +81,23 @@ fun CountScreen(
     var amountError by rememberSaveable { mutableStateOf(false) }
     var peopleError by rememberSaveable { mutableStateOf(false) }
     var taxError by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (id == null) return@LaunchedEffect
+
+        val data = viewModel.getTagihan(id) ?: return@LaunchedEffect
+
+        billName = data.namaTagihan
+        amountText = data.totalTagihan.toString()
+        peopleText = data.jumlahOrang.toString()
+        useTax = data.pakaiPajak
+        taxPercentText = if (data.pakaiPajak) {
+            data.persentasePajak.toString()
+        } else {
+            ""
+        }
+        result = "Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", data.hasilPerOrang)}"
+    }
 
     Scaffold(
         topBar = {

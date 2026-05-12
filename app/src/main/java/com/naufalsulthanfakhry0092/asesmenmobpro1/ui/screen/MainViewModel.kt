@@ -77,4 +77,8 @@ class MainViewModel : ViewModel() {
             tanggalDibuat = "2026-03-08 10:12:00"
         )
     )
+    fun getTagihan(id: Long): Tagihan? {
+       return data.find { it.id == id }
+    }
+
 }
