@@ -22,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
+import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
 import com.naufalsulthanfakhry0092.mobpro1.R
 import java.text.NumberFormat
 import java.util.Locale
@@ -83,8 +86,10 @@ fun ScreenContent(
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
-    val viewModel: MainViewModel = viewModel()
-    val data = viewModel.data
+    val context = LocalContext.current
+    val factory = ViewModelFactory(context)
+    val viewModel: MainViewModel = viewModel(factory = factory)
+    val data by viewModel.data.collectAsState()
 //    val data = emptyList<Tagihan>()
 
     if (data.isEmpty()){
