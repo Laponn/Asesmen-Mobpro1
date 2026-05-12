@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,26 +64,39 @@ fun ScreenContent(
 ) {
     val viewModel: MainViewModel = viewModel()
     val data = viewModel.data
+//    val data = emptyList<Tagihan>()
     val context = LocalContext.current
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 84.dp)
-    ) {
-        items(data) { tagihan ->
-            ListItem(
-                tagihan = tagihan,
-                onClick = {
-                    Toast.makeText(
-                        context,
-                        "Tagihan ${tagihan.namaTagihan} diklik",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            )
-            HorizontalDivider()
+    if (data.isEmpty()){
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = stringResource(id = R.string.list_kosong))
+        }
+    } else{
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 84.dp)
+        ) {
+            items(data) { tagihan ->
+                ListItem(
+                    tagihan = tagihan,
+                    onClick = {
+                        Toast.makeText(
+                            context,
+                            "Tagihan ${tagihan.namaTagihan} diklik",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                )
+                HorizontalDivider()
+            }
         }
     }
+
+
 }
 
 @Composable
