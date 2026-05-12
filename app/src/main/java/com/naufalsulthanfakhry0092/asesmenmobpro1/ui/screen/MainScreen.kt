@@ -46,7 +46,6 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(navController: NavHostController) {
-    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +61,7 @@ fun MainScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate(Screen.Count.route)
+                    navController.navigate(Screen.FormBaru.route)
                 }
             ) {
                 Icon(
@@ -74,11 +73,10 @@ fun MainScreen(navController: NavHostController) {
         }
     ) { paddingValues ->
         ScreenContent(
-            modifier = Modifier.padding(paddingValues), navController = navController
+            modifier = Modifier.padding(paddingValues),
+            navController = navController
         )
     }
-
-
 }
 
 @Composable
@@ -90,23 +88,23 @@ fun ScreenContent(
     val factory = ViewModelFactory(context)
     val viewModel: MainViewModel = viewModel(factory = factory)
     val data by viewModel.data.collectAsState()
-//    val data = emptyList<Tagihan>()
 
-    if (data.isEmpty()){
+    if (data.isEmpty()) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = stringResource(id = R.string.list_kosong))
         }
-    } else{
+    } else {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 84.dp)
         ) {
             items(data) { tagihan ->
-
                 ListItem(
                     tagihan = tagihan,
                     onClick = {
@@ -117,8 +115,6 @@ fun ScreenContent(
             }
         }
     }
-
-
 }
 
 @Composable

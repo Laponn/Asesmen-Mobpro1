@@ -16,7 +16,5 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
         initialValue = emptyList()
     )
 
-    fun getTagihan(id: Long): Tagihan? {
-        return data.value.find { it.id == id }
-    }
+
 }

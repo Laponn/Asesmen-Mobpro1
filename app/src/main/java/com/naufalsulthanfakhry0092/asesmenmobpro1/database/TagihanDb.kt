@@ -29,7 +29,9 @@ abstract class TagihanDb : RoomDatabase() {
                         context.applicationContext,
                         TagihanDb::class.java,
                         "tagihan.db"
-                    ).build()
+                    )
+                        .fallbackToDestructiveMigration()
+                        .build()
 
                     INSTANCE = instance
                 }

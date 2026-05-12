@@ -18,4 +18,7 @@ interface TagihanDao {
 
     @Query("SELECT * FROM tagihan ORDER BY tanggalDibuat DESC")
     fun getTagihan(): Flow<List<Tagihan>>
+
+    @Query("SELECT * FROM tagihan WHERE id = :id")
+    suspend fun getTagihanById(id: Long): Tagihan?
 }

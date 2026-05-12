@@ -22,8 +22,10 @@ fun SetupNavGraph(
             MainScreen(navController)
         }
 
-        composable(route = Screen.Count.route) {
-            CountScreen(navController = navController)
+        composable(route = Screen.FormBaru.route) {
+            CountScreen(
+                navController = navController
+            )
         }
 
         composable(
@@ -35,7 +37,11 @@ fun SetupNavGraph(
             )
         ) { navBackStackEntry ->
             val id = navBackStackEntry.arguments?.getLong(KEY_ID_TAGIHAN)
-            CountScreen(navController, id)
+
+            CountScreen(
+                navController = navController,
+                id = id
+            )
         }
     }
 }

@@ -3,6 +3,7 @@ package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -59,7 +60,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
+import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
 import com.naufalsulthanfakhry0092.mobpro1.R
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +71,8 @@ fun CountScreen(
     id: Long? = null
 ) {
     val context = LocalContext.current
-    val viewModel: MainViewModel = viewModel()
+    val factory = ViewModelFactory(context)
+    val viewModel: DetailViewModel = viewModel(factory = factory)
 
     var billName by rememberSaveable { mutableStateOf("") }
     var amountText by rememberSaveable { mutableStateOf("") }
@@ -96,7 +100,7 @@ fun CountScreen(
         } else {
             ""
         }
-        result = "Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", data.hasilPerOrang)}"
+        result = "Rp ${String.format(Locale.getDefault(), "%,.0f", data.hasilPerOrang)}"
     }
 
     Scaffold(
@@ -108,9 +112,13 @@ fun CountScreen(
                     navigationIconContentColor = MaterialTheme.colorScheme.primary
                 ),
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.kembali)
                         )
                     }
@@ -126,7 +134,64 @@ fun CountScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = {
+                            billNameError = billName.isBlank()
+
+                            val amount = amountText.toDoubleOrNull()
+                            amountError = amount == null || amount <= 0.0
+
+                            val people = peopleText.toIntOrNull()
+                            peopleError = people == null || people <= 0
+
+                            val taxPct = taxPercentText.toDoubleOrNull() ?: 0.0
+                            taxError = useTax && taxPct < 0.0
+
+                            if (billNameError || amountError || peopleError || taxError) {
+                                Toast.makeText(
+                                    context,
+                                    R.string.invalid,
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                return@IconButton
+                            }
+
+                            val safeAmount = amount ?: 0.0
+                            val safePeople = people ?: 1
+                            val safeTaxPct = if (useTax) taxPct else 0.0
+
+                            val taxAmount = if (useTax) {
+                                safeAmount * (safeTaxPct / 100)
+                            } else {
+                                0.0
+                            }
+
+                            val perPerson = (safeAmount + taxAmount) / safePeople
+
+                            if (id == null) {
+                                viewModel.insert(
+                                    namaTagihan = billName,
+                                    totalTagihan = safeAmount,
+                                    jumlahOrang = safePeople,
+                                    pakaiPajak = useTax,
+                                    persentasePajak = safeTaxPct,
+                                    hasilPerOrang = perPerson
+                                )
+                            } else {
+                                viewModel.update(
+                                    id = id,
+                                    namaTagihan = billName,
+                                    totalTagihan = safeAmount,
+                                    jumlahOrang = safePeople,
+                                    pakaiPajak = useTax,
+                                    persentasePajak = safeTaxPct,
+                                    hasilPerOrang = perPerson
+                                )
+                            }
+
+                            navController.popBackStack()
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Check,
                             contentDescription = stringResource(id = R.string.simpan)
@@ -144,25 +209,45 @@ fun CountScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             OutlinedTextField(
                 value = billName,
-                onValueChange = { billName = it },
-                label = { Text(stringResource(id = R.string.nama_tagihan)) },
+                onValueChange = {
+                    billName = it
+                    billNameError = false
+                },
+                label = {
+                    Text(text = stringResource(id = R.string.nama_tagihan))
+                },
                 isError = billNameError,
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                trailingIcon = { IconPicker(billNameError, "") },
-                supportingText = { ErrorHint(billNameError) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null
+                    )
+                },
+                trailingIcon = {
+                    IconPicker(billNameError, "")
+                },
+                supportingText = {
+                    ErrorHint(billNameError)
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = amountText,
-                onValueChange = { amountText = it },
-                label = { Text(stringResource(id = R.string.total_bill)) },
+                onValueChange = {
+                    amountText = it
+                    amountError = false
+                },
+                label = {
+                    Text(text = stringResource(id = R.string.total_bill))
+                },
                 isError = amountError,
                 leadingIcon = {
                     Text(
@@ -171,8 +256,12 @@ fun CountScreen(
                         modifier = Modifier.padding(start = 16.dp, end = 8.dp)
                     )
                 },
-                trailingIcon = { IconPicker(amountError, "") },
-                supportingText = { ErrorHint(amountError) },
+                trailingIcon = {
+                    IconPicker(amountError, "")
+                },
+                supportingText = {
+                    ErrorHint(amountError)
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(
@@ -184,12 +273,26 @@ fun CountScreen(
 
             OutlinedTextField(
                 value = peopleText,
-                onValueChange = { peopleText = it },
-                label = { Text(stringResource(id = R.string.jumlah_orang)) },
+                onValueChange = {
+                    peopleText = it
+                    peopleError = false
+                },
+                label = {
+                    Text(text = stringResource(id = R.string.jumlah_orang))
+                },
                 isError = peopleError,
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                trailingIcon = { IconPicker(peopleError, "Orang") },
-                supportingText = { ErrorHint(peopleError) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null
+                    )
+                },
+                trailingIcon = {
+                    IconPicker(peopleError, "Orang")
+                },
+                supportingText = {
+                    ErrorHint(peopleError)
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(
@@ -212,34 +315,60 @@ fun CountScreen(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(
-                        1.dp,
-                        if (!useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+                        width = 1.dp,
+                        color = if (!useTax) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            Color.Gray.copy(alpha = 0.5f)
+                        }
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (!useTax) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                        containerColor = if (!useTax) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            Color.Transparent
+                        }
                     )
                 ) {
                     Text(
                         text = stringResource(id = R.string.tanpa_pajak),
-                        color = if (!useTax) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray
+                        color = if (!useTax) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            Color.Gray
+                        }
                     )
                 }
 
                 OutlinedButton(
-                    onClick = { useTax = true },
+                    onClick = {
+                        useTax = true
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(
-                        1.dp,
-                        if (useTax) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+                        width = 1.dp,
+                        color = if (useTax) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            Color.Gray.copy(alpha = 0.5f)
+                        }
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (useTax) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                        containerColor = if (useTax) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            Color.Transparent
+                        }
                     )
                 ) {
                     Text(
                         text = stringResource(id = R.string.pajak_opsi),
-                        color = if (useTax) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray
+                        color = if (useTax) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            Color.Gray
+                        }
                     )
                 }
             }
@@ -247,11 +376,20 @@ fun CountScreen(
             if (useTax) {
                 OutlinedTextField(
                     value = taxPercentText,
-                    onValueChange = { taxPercentText = it },
-                    label = { Text(stringResource(id = R.string.persentase_pajak)) },
+                    onValueChange = {
+                        taxPercentText = it
+                        taxError = false
+                    },
+                    label = {
+                        Text(text = stringResource(id = R.string.persentase_pajak))
+                    },
                     isError = taxError,
-                    trailingIcon = { IconPicker(taxError, "%") },
-                    supportingText = { ErrorHint(taxError) },
+                    trailingIcon = {
+                        IconPicker(taxError, "%")
+                    },
+                    supportingText = {
+                        ErrorHint(taxError)
+                    },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(
@@ -270,7 +408,7 @@ fun CountScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 onClick = {
-                    billNameError = billName.isEmpty()
+                    billNameError = billName.isBlank()
 
                     val amount = amountText.toDoubleOrNull()
                     amountError = amount == null || amount <= 0.0
@@ -278,8 +416,8 @@ fun CountScreen(
                     val people = peopleText.toIntOrNull()
                     peopleError = people == null || people <= 0
 
-                    val taxPct = taxPercentText.toDoubleOrNull()
-                    taxError = useTax && (taxPct == null || taxPct < 0.0)
+                    val taxPct = taxPercentText.toDoubleOrNull() ?: 0.0
+                    taxError = useTax && taxPct < 0.0
 
                     if (billNameError || amountError || peopleError || taxError) {
                         result = ""
@@ -288,12 +426,17 @@ fun CountScreen(
 
                     val safeAmount = amount ?: 0.0
                     val safePeople = people ?: 1
-                    val safeTaxPct = taxPct ?: 0.0
+                    val safeTaxPct = if (useTax) taxPct else 0.0
 
-                    val taxAmount = if (useTax) safeAmount * (safeTaxPct / 100) else 0.0
+                    val taxAmount = if (useTax) {
+                        safeAmount * (safeTaxPct / 100)
+                    } else {
+                        0.0
+                    }
+
                     val perPerson = (safeAmount + taxAmount) / safePeople
 
-                    result = "Rp ${String.format(java.util.Locale.getDefault(), "%,.0f", perPerson)}"
+                    result = "Rp ${String.format(Locale.getDefault(), "%,.0f", perPerson)}"
                 }
             ) {
                 Text(
@@ -338,14 +481,19 @@ fun CountScreen(
                         val message = "Patungan $billName:\nTotal per orang jadi $result. Buruan transfer ya!"
 
                         Button(
-                            onClick = { shareData(context, message) },
+                            onClick = {
+                                shareData(context, message)
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(vertical = 12.dp)
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(id = R.string.share))
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(id = R.string.share))
                         }
                     }
                 }
@@ -373,19 +521,29 @@ fun ErrorHint(isError: Boolean) {
 }
 
 @Composable
-fun IconPicker(isError: Boolean, unit: String) {
+fun IconPicker(
+    isError: Boolean,
+    unit: String
+) {
     if (isError) {
-        Icon(imageVector = Icons.Filled.Warning, contentDescription = null)
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null
+        )
     } else if (unit.isNotEmpty()) {
         Text(text = unit)
     }
 }
 
-private fun shareData(context: Context, message: String) {
+private fun shareData(
+    context: Context,
+    message: String
+) {
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
         type = "text" + Char(47) + "plain"
         putExtra(Intent.EXTRA_TEXT, message)
     }
+
     if (shareIntent.resolveActivity(context.packageManager) != null) {
         context.startActivity(shareIntent)
     }
