@@ -1,7 +1,6 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -72,7 +71,7 @@ fun MainScreen(navController: NavHostController) {
         }
     ) { paddingValues ->
         ScreenContent(
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues), navController = navController
         )
     }
 
@@ -81,12 +80,12 @@ fun MainScreen(navController: NavHostController) {
 
 @Composable
 fun ScreenContent(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavHostController
 ) {
     val viewModel: MainViewModel = viewModel()
     val data = viewModel.data
 //    val data = emptyList<Tagihan>()
-    val context = LocalContext.current
 
     if (data.isEmpty()){
         Column(
@@ -102,11 +101,11 @@ fun ScreenContent(
             contentPadding = PaddingValues(bottom = 84.dp)
         ) {
             items(data) { tagihan ->
-                val pesan = stringResource(R.string.x_diklik, tagihan.namaTagihan)
+
                 ListItem(
                     tagihan = tagihan,
                     onClick = {
-                        Toast.makeText(context, pesan,Toast.LENGTH_SHORT).show()
+                        navController.navigate(Screen.FormUbah.withId(tagihan.id))
                     }
                 )
                 HorizontalDivider()
