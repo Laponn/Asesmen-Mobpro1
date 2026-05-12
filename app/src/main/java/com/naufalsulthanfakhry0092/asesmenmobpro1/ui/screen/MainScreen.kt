@@ -81,14 +81,11 @@ fun ScreenContent(
             contentPadding = PaddingValues(bottom = 84.dp)
         ) {
             items(data) { tagihan ->
+                val pesan = stringResource(R.string.x_diklik, tagihan.namaTagihan)
                 ListItem(
                     tagihan = tagihan,
                     onClick = {
-                        Toast.makeText(
-                            context,
-                            "Tagihan ${tagihan.namaTagihan} diklik",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(context, pesan,Toast.LENGTH_SHORT).show()
                     }
                 )
                 HorizontalDivider()

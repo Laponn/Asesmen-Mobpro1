@@ -14,4 +14,6 @@
     <string name="tanpa_pajak">Tanpa Pajak</string>
     <string name="persentase_pajak">Besaran Pajak (%)</string>
     <string name="error_message">Input tidak valid atau kosong!</string>
+    <string name="list_kosong">Belum ada data</string>
+    <string name="x_diklik">%1$s diklik!</string>
 </resources>
