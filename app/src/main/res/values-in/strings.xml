@@ -16,4 +16,6 @@
     <string name="error_message">Input tidak valid atau kosong!</string>
     <string name="list_kosong">Belum ada data</string>
     <string name="x_diklik">%1$s diklik!</string>
+    <string name="tambah_tagihan">Tambah tagihan</string>
+    <string name="belum_bisa">Belum bisa tambah tagihan.</string>
 </resources>
