@@ -67,4 +67,10 @@ class DetailViewModel(
             dao.update(tagihan)
         }
     }
+
+    fun delete(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.deleteById(id)
+        }
+    }
 }

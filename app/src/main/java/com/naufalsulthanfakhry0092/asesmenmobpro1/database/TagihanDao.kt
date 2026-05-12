@@ -21,4 +21,7 @@ interface TagihanDao {
 
     @Query("SELECT * FROM tagihan WHERE id = :id")
     suspend fun getTagihanById(id: Long): Tagihan?
+
+    @Query("DELETE FROM tagihan WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

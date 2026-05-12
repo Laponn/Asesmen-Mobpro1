@@ -21,4 +21,6 @@
     <string name="ubah_tagihan">Edit tagihan</string>
     <string name="simpan">Simpan</string>
     <string name="invalid">Data tagihan belum valid. Pastikan nama tagihan, total tagihan, dan jumlah orang sudah diisi dengan benar.</string>
+    <string name="lainnya">Opsi lainnya</string>
+    <string name="hapus">Hapus tagihan</string>
 </resources>

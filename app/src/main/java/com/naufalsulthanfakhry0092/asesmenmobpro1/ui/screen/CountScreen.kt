@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
@@ -30,6 +31,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,7 +89,7 @@ fun CountScreen(
     var peopleError by rememberSaveable { mutableStateOf(false) }
     var taxError by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(id) {
         if (id == null) return@LaunchedEffect
 
         val data = viewModel.getTagihan(id) ?: return@LaunchedEffect
@@ -195,6 +198,15 @@ fun CountScreen(
                         Icon(
                             imageVector = Icons.Filled.Check,
                             contentDescription = stringResource(id = R.string.simpan)
+                        )
+                    }
+
+                    if (id != null) {
+                        DeleteAction(
+                            delete = {
+                                viewModel.delete(id)
+                                navController.popBackStack()
+                            }
                         )
                     }
                 }
@@ -499,6 +511,42 @@ fun CountScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun DeleteAction(
+    delete: () -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    IconButton(
+        onClick = {
+            expanded = true
+        }
+    ) {
+        Icon(
+            imageVector = Icons.Filled.MoreVert,
+            contentDescription = stringResource(id = R.string.lainnya),
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = {
+            expanded = false
+        }
+    ) {
+        DropdownMenuItem(
+            text = {
+                Text(text = stringResource(id = R.string.hapus))
+            },
+            onClick = {
+                expanded = false
+                delete()
+            }
+        )
     }
 }
 
