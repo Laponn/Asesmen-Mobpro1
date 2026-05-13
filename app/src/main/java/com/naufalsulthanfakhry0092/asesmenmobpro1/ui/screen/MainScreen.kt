@@ -32,9 +32,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -50,15 +48,21 @@ import androidx.navigation.compose.rememberNavController
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
+import com.naufalsulthanfakhry0092.asesmenmobpro1.util.SettingsDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
 import com.naufalsulthanfakhry0092.mobpro1.R
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(navController: NavHostController) {
-    var showList by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val dataStore = SettingsDataStore(context)
+    val showList by dataStore.layoutFlow.collectAsState(initial = true)
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,18 +74,27 @@ fun MainScreen(navController: NavHostController) {
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
-                    IconButton(onClick = { showList = !showList }) {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                dataStore.saveLayout(!showList)
+                            }
+                        }
+                    ) {
                         Icon(
                             painter = painterResource(
-                                id = if (showList)
+                                id = if (showList) {
                                     R.drawable.outline_grid_view_24
-                                else
+                                } else {
                                     R.drawable.baseline_view_list_24
-
+                                }
                             ),
                             contentDescription = stringResource(
-                                id = if (showList) R.string.grid
-                                 else R.string.list
+                                id = if (showList) {
+                                    R.string.grid
+                                } else {
+                                    R.string.list
+                                }
                             ),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -133,7 +146,7 @@ fun ScreenContent(
             Text(text = stringResource(id = R.string.list_kosong))
         }
     } else {
-        if(showList){
+        if (showList) {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 84.dp)
@@ -148,8 +161,7 @@ fun ScreenContent(
                     HorizontalDivider()
                 }
             }
-        }
-        else{
+        } else {
             LazyVerticalStaggeredGrid(
                 modifier = modifier.fillMaxSize(),
                 columns = StaggeredGridCells.Fixed(2),
@@ -164,7 +176,6 @@ fun ScreenContent(
                 }
             }
         }
-
     }
 }
 
@@ -225,15 +236,6 @@ fun ListItem(
     }
 }
 
-@Preview(showBackground = true)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    AsesmenMobpro1Theme {
-        MainScreen(rememberNavController())
-    }
-}
-
 @Composable
 fun GridItem(
     tagihan: Tagihan,
@@ -248,7 +250,10 @@ fun GridItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = BorderStroke(width = 1.dp, DividerDefaults.color)
+        border = BorderStroke(
+            width = 1.dp,
+            color = DividerDefaults.color
+        )
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -295,5 +300,14 @@ fun GridItem(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+fun MainScreenPreview() {
+    AsesmenMobpro1Theme {
+        MainScreen(rememberNavController())
     }
 }
