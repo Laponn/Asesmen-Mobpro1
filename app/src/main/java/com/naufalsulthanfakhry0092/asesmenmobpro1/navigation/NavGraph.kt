@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen.CountScreen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen.MainScreen
+import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen.RecycleBinScreen
 
 @Composable
 fun SetupNavGraph(
@@ -42,6 +43,10 @@ fun SetupNavGraph(
                 navController = navController,
                 id = id
             )
+        }
+
+        composable(route = Screen.RecycleBin.route) {
+            RecycleBinScreen(navController)
         }
     }
 }

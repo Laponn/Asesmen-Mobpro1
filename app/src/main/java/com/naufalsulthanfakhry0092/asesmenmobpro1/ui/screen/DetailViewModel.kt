@@ -69,8 +69,16 @@ class DetailViewModel(
     }
 
     fun delete(id: Long) {
+        val deletedAt = formatter.format(Date())
+
         viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteById(id)
+            dao.softDelete(id, deletedAt)
+        }
+    }
+
+    fun restore(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.restore(id)
         }
     }
 }

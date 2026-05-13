@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
@@ -74,6 +75,18 @@ fun MainScreen(navController: NavHostController) {
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
+                    IconButton(
+                        onClick = {
+                            navController.navigate(Screen.RecycleBin.route)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.History,
+                            contentDescription = stringResource(id = R.string.recycle_bin),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
@@ -169,9 +182,9 @@ fun ScreenContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(8.dp, 8.dp, 8.dp, 84.dp)
             ) {
-                items(data) {
-                    GridItem(tagihan = it) {
-                        navController.navigate(Screen.FormUbah.withId(it.id))
+                items(data) { tagihan ->
+                    GridItem(tagihan = tagihan) {
+                        navController.navigate(Screen.FormUbah.withId(tagihan.id))
                     }
                 }
             }

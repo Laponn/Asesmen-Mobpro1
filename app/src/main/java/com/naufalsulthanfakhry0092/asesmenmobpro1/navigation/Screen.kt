@@ -6,6 +6,7 @@ sealed class Screen(val route: String) {
     data object Home : Screen("mainScreen")
 
     data object FormBaru : Screen("countScreen")
+    data object RecycleBin : Screen("recycleBinScreen")
 
     data object FormUbah : Screen("countScreen/{$KEY_ID_TAGIHAN}") {
         fun withId(id: Long) = "countScreen/$id"

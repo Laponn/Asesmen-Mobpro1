@@ -8,7 +8,7 @@ import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 
 @Database(
     entities = [Tagihan::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class TagihanDb : RoomDatabase() {
