@@ -89,6 +89,8 @@ fun CountScreen(
     var peopleError by rememberSaveable { mutableStateOf(false) }
     var taxError by rememberSaveable { mutableStateOf(false) }
 
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+
     LaunchedEffect(id) {
         if (id == null) return@LaunchedEffect
 
@@ -204,8 +206,7 @@ fun CountScreen(
                     if (id != null) {
                         DeleteAction(
                             delete = {
-                                viewModel.delete(id)
-                                navController.popBackStack()
+                                showDialog = true
                             }
                         )
                     }
@@ -510,6 +511,19 @@ fun CountScreen(
                     }
                 }
             }
+        }
+
+        if (id != null && showDialog) {
+            DisplayAlertDialog(
+                onDismissRequest = {
+                    showDialog = false
+                },
+                onConfirmation = {
+                    showDialog = false
+                    viewModel.delete(id)
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

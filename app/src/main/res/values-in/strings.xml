@@ -23,4 +23,7 @@
     <string name="invalid">Data tagihan belum valid. Pastikan nama tagihan, total tagihan, dan jumlah orang sudah diisi dengan benar.</string>
     <string name="lainnya">Opsi lainnya</string>
     <string name="hapus">Hapus tagihan</string>
+    <string name="pesan_hapus">Hapus tagihan ini?</string>
+    <string name="tombol_hapus">Hapus</string>
+    <string name="tombol_batal">Batal</string>
 </resources>
