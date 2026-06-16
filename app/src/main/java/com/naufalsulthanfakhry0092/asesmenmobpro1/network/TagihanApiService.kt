@@ -33,3 +33,4 @@ object TagihanApi {
     }
 }
 
+enum class ApiStatus{ LOADING, SUCCESS }

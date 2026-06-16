@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naufalsulthanfakhry0092.asesmenmobpro1.database.TagihanDao
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.ApiStatus
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,8 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
 
     private val _data = MutableStateFlow<List<Tagihan>>(emptyList())
     val data: StateFlow<List<Tagihan>> get() = _data
+    var status = MutableStateFlow(ApiStatus.LOADING)
+        private set
 
     init {
         retrieveData()
@@ -22,11 +25,12 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
 
     private fun retrieveData() {
         viewModelScope.launch(Dispatchers.IO) {
+            status.value = ApiStatus.LOADING
             try {
                 val result = TagihanApi.service.getTagihan()
                 Log.d("MainViewModel", "Success: $result")
-
                 _data.value = result
+                status.value = ApiStatus.SUCCESS
 
             } catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")

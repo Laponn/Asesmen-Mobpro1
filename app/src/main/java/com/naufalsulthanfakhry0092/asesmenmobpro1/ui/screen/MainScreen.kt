@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -52,6 +53,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.ApiStatus
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.SettingsDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
@@ -151,47 +153,63 @@ fun ScreenContent(
     val factory = ViewModelFactory(context)
     val viewModel: MainViewModel = viewModel(factory = factory)
     val data by viewModel.data.collectAsState()
+    val status by viewModel.status.collectAsState()
 
-    if (data.isEmpty()) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = stringResource(id = R.string.list_kosong))
-        }
-    } else {
-        if (showList) {
-            LazyColumn(
+    when (status) {
+        ApiStatus.LOADING -> {
+            Box(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 84.dp)
+                contentAlignment = Alignment.Center
             ) {
-                items(data) { tagihan ->
-                    ListItem(
-                        tagihan = tagihan,
-                        onClick = {
-                            navController.navigate(Screen.FormUbah.withId(tagihan.id))
-                        }
-                    )
-                    HorizontalDivider()
-                }
+                CircularProgressIndicator()
             }
-        } else {
-            LazyVerticalStaggeredGrid(
-                modifier = modifier.fillMaxSize(),
-                columns = StaggeredGridCells.Fixed(2),
-                verticalItemSpacing = 8.dp,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(8.dp, 8.dp, 8.dp, 84.dp)
-            ) {
-                items(data) { tagihan ->
-                    GridItem(tagihan = tagihan) {
-                        navController.navigate(Screen.FormUbah.withId(tagihan.id))
+        }
+        ApiStatus.SUCCESS -> {
+            if (data.isEmpty()) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = stringResource(id = R.string.list_kosong))
+                }
+            } else {
+                if (showList) {
+                    LazyColumn(
+                        modifier = modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 84.dp)
+                    ) {
+                        items(data) { tagihan ->
+                            ListItem(
+                                tagihan = tagihan,
+                                onClick = {
+                                    navController.navigate(Screen.FormUbah.withId(tagihan.id))
+                                }
+                            )
+                            HorizontalDivider()
+                        }
+                    }
+                } else {
+                    LazyVerticalStaggeredGrid(
+                        modifier = modifier.fillMaxSize(),
+                        columns = StaggeredGridCells.Fixed(2),
+                        verticalItemSpacing = 8.dp,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(8.dp, 8.dp, 8.dp, 84.dp)
+                    ) {
+                        items(data) { tagihan ->
+                            GridItem(tagihan = tagihan) {
+                                navController.navigate(Screen.FormUbah.withId(tagihan.id))
+                            }
+                        }
                     }
                 }
             }
+        }
+        else -> {
+
         }
     }
 }
@@ -301,6 +319,7 @@ fun GridItem(
                     contentDescription = stringResource(R.string.gambar, tagihan.namaTagihan),
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(id = R.drawable.loading_img),
+                    error = painterResource(id = R.drawable.baseline_broken_image_24),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
