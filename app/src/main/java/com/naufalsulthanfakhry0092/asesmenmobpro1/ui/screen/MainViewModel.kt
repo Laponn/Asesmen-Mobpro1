@@ -7,18 +7,14 @@ import com.naufalsulthanfakhry0092.asesmenmobpro1.database.TagihanDao
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewModel(dao: TagihanDao) : ViewModel() {
 
-    val data: StateFlow<List<Tagihan>> = dao.getTagihan().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(),
-        initialValue = emptyList()
-    )
+    private val _data = MutableStateFlow<List<Tagihan>>(emptyList())
+    val data: StateFlow<List<Tagihan>> get() = _data
 
     init {
         retrieveData()
@@ -29,6 +25,9 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
             try {
                 val result = TagihanApi.service.getTagihan()
                 Log.d("MainViewModel", "Success: $result")
+
+                _data.value = result
+
             } catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
             }

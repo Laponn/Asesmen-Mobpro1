@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -46,8 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
 import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.SettingsDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
@@ -198,6 +203,7 @@ fun ListItem(
     onClick: () -> Unit
 ) {
     val rupiah = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -206,6 +212,20 @@ fun ListItem(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        if (tagihan.imageId != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(TagihanApi.getImageUrl(tagihan.imageId))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = stringResource(R.string.gambar, tagihan.namaTagihan),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+            )
+        }
+
         Text(
             text = tagihan.namaTagihan,
             maxLines = 1,
@@ -255,6 +275,7 @@ fun GridItem(
     onClick: () -> Unit
 ) {
     val rupiah = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier
@@ -272,6 +293,20 @@ fun GridItem(
             modifier = Modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            if (tagihan.imageId != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(TagihanApi.getImageUrl(tagihan.imageId))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(R.string.gambar, tagihan.namaTagihan),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                )
+            }
+
             Text(
                 text = tagihan.namaTagihan,
                 maxLines = 2,

@@ -35,4 +35,6 @@
     <string name="hapus_permanen">Hapus permanen</string>
     <string name="recycle_bin_kosong">Belum ada tagihan yang dihapus.</string>
     <string name="tanggal_dihapus">Dihapus pada</string>
+    <string name="gambar">Gambar %1$s</string>
+
 </resources>

@@ -27,4 +27,9 @@ object TagihanApi {
     val service: TagihanApiService by lazy {
         retrofit.create(TagihanApiService::class.java)
     }
+
+    fun getImageUrl(imageId: String): String {
+        return "${BASE_URL}images/$imageId.jpg"
+    }
 }
+

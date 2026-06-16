@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.retrofit)
     implementation(libs.converter.moshi)
+    implementation(libs.coil.compose)
     implementation(libs.moshi.kotlin)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
