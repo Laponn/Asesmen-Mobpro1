@@ -63,9 +63,11 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
+import com.naufalsulthanfakhry0092.asesmenmobpro1.model.User
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.ApiStatus
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.UserDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.SettingsDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
 import com.naufalsulthanfakhry0092.mobpro1.BuildConfig
@@ -80,10 +82,11 @@ import java.util.Locale
 @Composable
 fun MainScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val dataStore = SettingsDataStore(context)
-    val showList by dataStore.layoutFlow.collectAsState(initial = true)
+    val settingsDataStore = SettingsDataStore(context)
+    val showList by settingsDataStore.layoutFlow.collectAsState(initial = true)
+    val userDataStore = UserDataStore(context)
+    val user by userDataStore.userFlow.collectAsState(User())
     val coroutineScope = rememberCoroutineScope()
-
 
     Scaffold(
         topBar = {
@@ -111,7 +114,7 @@ fun MainScreen(navController: NavHostController) {
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                dataStore.saveLayout(!showList)
+                                settingsDataStore.saveLayout(!showList)
                             }
                         }
                     ) {
@@ -134,7 +137,11 @@ fun MainScreen(navController: NavHostController) {
                         )
                     }
                     IconButton(onClick = {
-                        CoroutineScope(Dispatchers.IO).launch { signIn(context)}
+                        if (user.email.isEmpty()) {
+                            CoroutineScope(Dispatchers.IO).launch { signIn(context, userDataStore) }
+                        } else {
+                            Log.d("SIGN-IN", "User: $user")
+                        }
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_account_circle_24),
@@ -248,7 +255,6 @@ fun ScreenContent(
                 }
             }
         }
-
     }
 }
 
@@ -399,7 +405,7 @@ fun GridItem(
     }
 }
 
-private suspend fun signIn(context: Context) {
+private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)
         .setServerClientId(BuildConfig.API_KEY)
@@ -412,13 +418,13 @@ private suspend fun signIn(context: Context) {
     try {
         val credentialManager = CredentialManager.create(context)
         val result = credentialManager.getCredential(context, request)
-        handleSignIn(result)
+        handleSignIn(result, dataStore)
     } catch (e: GetCredentialException) {
         Log.e("SIGN-IN", "Error: ${e.errorMessage}")
     }
 }
 
-private fun handleSignIn(result: GetCredentialResponse) {
+private suspend fun handleSignIn(result: GetCredentialResponse, dataStore: UserDataStore) {
     val credential = result.credential
 
     if (credential is CustomCredential &&
@@ -426,7 +432,10 @@ private fun handleSignIn(result: GetCredentialResponse) {
     ) {
         try {
             val googleId = GoogleIdTokenCredential.createFrom(credential.data)
-            Log.d("SIGN-IN", "User email: ${googleId.id}")
+            val nama = googleId.displayName ?: ""
+            val email = googleId.id
+            val photoUrl = googleId.profilePictureUri.toString()
+            dataStore.saveData(User(nama, email, photoUrl))
         } catch (e: GoogleIdTokenParsingException) {
             Log.e("SIGN-IN", "Error: ${e.message}")
         }
