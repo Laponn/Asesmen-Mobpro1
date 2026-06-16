@@ -225,6 +225,7 @@ fun ListItem(
                         .build(),
                     contentDescription = stringResource(R.string.gambar, tagihan.namaTagihan),
                     contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.loading_img),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
@@ -299,6 +300,7 @@ fun GridItem(
                         .build(),
                     contentDescription = stringResource(R.string.gambar, tagihan.namaTagihan),
                     contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.loading_img),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
