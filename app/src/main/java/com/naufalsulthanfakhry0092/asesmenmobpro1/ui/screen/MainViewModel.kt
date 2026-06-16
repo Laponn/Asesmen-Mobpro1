@@ -23,7 +23,7 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
         retrieveData()
     }
 
-    private fun retrieveData() {
+    fun retrieveData() {
         viewModelScope.launch(Dispatchers.IO) {
             status.value = ApiStatus.LOADING
             try {
@@ -34,6 +34,7 @@ class MainViewModel(dao: TagihanDao) : ViewModel() {
 
             } catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
+                status.value = ApiStatus.FAILED
             }
         }
     }

@@ -36,5 +36,8 @@
     <string name="recycle_bin_kosong">Belum ada tagihan yang dihapus.</string>
     <string name="tanggal_dihapus">Dihapus pada</string>
     <string name="gambar">Gambar %1$s</string>
+    <string name="error">Gagal memuat data... Silakan coba lagi.</string>
+    <string name="try_again">Coba lagi</string>
+
 
 </resources>
