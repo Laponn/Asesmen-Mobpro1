@@ -1,5 +1,7 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
+import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,17 +50,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.naufalsulthanfakhry0092.asesmenmobpro1.model.Tagihan
 import com.naufalsulthanfakhry0092.asesmenmobpro1.navigation.Screen
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.ApiStatus
 import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.SettingsDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
+import com.naufalsulthanfakhry0092.mobpro1.BuildConfig
 import com.naufalsulthanfakhry0092.mobpro1.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -70,6 +83,7 @@ fun MainScreen(navController: NavHostController) {
     val dataStore = SettingsDataStore(context)
     val showList by dataStore.layoutFlow.collectAsState(initial = true)
     val coroutineScope = rememberCoroutineScope()
+
 
     Scaffold(
         topBar = {
@@ -119,7 +133,16 @@ fun MainScreen(navController: NavHostController) {
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
+                    IconButton(onClick = {
+                        CoroutineScope(Dispatchers.IO).launch { signIn(context)}
+                    }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_account_circle_24),
+                            contentDescription = stringResource(R.string.profil),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
             )
         },
         floatingActionButton = {
@@ -373,5 +396,41 @@ fun GridItem(
                 )
             }
         }
+    }
+}
+
+private suspend fun signIn(context: Context) {
+    val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(false)
+        .setServerClientId(BuildConfig.API_KEY)
+        .build()
+
+    val request: GetCredentialRequest = GetCredentialRequest.Builder()
+        .addCredentialOption(googleIdOption)
+        .build()
+
+    try {
+        val credentialManager = CredentialManager.create(context)
+        val result = credentialManager.getCredential(context, request)
+        handleSignIn(result)
+    } catch (e: GetCredentialException) {
+        Log.e("SIGN-IN", "Error: ${e.errorMessage}")
+    }
+}
+
+private fun handleSignIn(result: GetCredentialResponse) {
+    val credential = result.credential
+
+    if (credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+    ) {
+        try {
+            val googleId = GoogleIdTokenCredential.createFrom(credential.data)
+            Log.d("SIGN-IN", "User email: ${googleId.id}")
+        } catch (e: GoogleIdTokenParsingException) {
+            Log.e("SIGN-IN", "Error: ${e.message}")
+        }
+    } else {
+        Log.e("SIGN-IN", "Error: unrecognized custom credential type.")
     }
 }
