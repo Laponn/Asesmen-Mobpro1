@@ -1,6 +1,7 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,6 +84,17 @@ fun ProfilDialog(
                     ) {
                         Text(stringResource(R.string.tutup))
                     }
+
+                    OutlinedButton(
+                        onClick = { onConfirmation() },
+                        modifier = Modifier.padding(8.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.logout),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }
@@ -92,9 +105,9 @@ fun ProfilDialog(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 fun ProfilDialogPreview() {
-    AsesmenMobpro1Theme()  {
+    AsesmenMobpro1Theme {
         ProfilDialog(
-            user = User("Naufal Sulthan Fakhry", "naufal.sulthan.fakhry@gmail.com", ""),
+            user = User("ebed", "naufal.sulthan.fakhry@gmail.com", ""),
             onDismissRequest = {},
             onConfirmation = {}
         )
