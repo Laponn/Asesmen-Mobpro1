@@ -14,6 +14,7 @@ data class Tagihan(
     val persentasePajak: Double,
     val hasilPerOrang: Double,
     val tanggalDibuat: String,
+    val imageId: String? = null,
     val isDeleted: Boolean = false,
     val deletedAt: String? = null
 )
