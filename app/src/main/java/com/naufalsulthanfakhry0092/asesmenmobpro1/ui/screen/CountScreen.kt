@@ -1,34 +1,35 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
-import android.content.Context
-import android.content.Intent
-import android.content.res.Configuration
+import android.content.ContentResolver
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -45,26 +46,35 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.naufalsulthanfakhry0092.asesmenmobpro1.ui.theme.AsesmenMobpro1Theme
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
+import com.naufalsulthanfakhry0092.asesmenmobpro1.model.User
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.TagihanApi
+import com.naufalsulthanfakhry0092.asesmenmobpro1.network.UserDataStore
 import com.naufalsulthanfakhry0092.asesmenmobpro1.util.ViewModelFactory
-import com.naufalsulthanfakhry0092.mobpro1.R
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +86,12 @@ fun CountScreen(
     val context = LocalContext.current
     val factory = ViewModelFactory(context)
     val viewModel: DetailViewModel = viewModel(factory = factory)
+    val mainViewModel: MainViewModel = viewModel(
+        factory = factory,
+        viewModelStoreOwner = context as ComponentActivity
+    )
+    val userDataStore = UserDataStore(context)
+    val user by userDataStore.userFlow.collectAsState(User())
 
     var billName by rememberSaveable { mutableStateOf("") }
     var amountText by rememberSaveable { mutableStateOf("") }
@@ -83,28 +99,43 @@ fun CountScreen(
     var useTax by rememberSaveable { mutableStateOf(false) }
     var taxPercentText by rememberSaveable { mutableStateOf("") }
     var result by rememberSaveable { mutableStateOf("") }
+    var existingImageId by remember { mutableStateOf<String?>(null) }
 
     var billNameError by rememberSaveable { mutableStateOf(false) }
     var amountError by rememberSaveable { mutableStateOf(false) }
     var peopleError by rememberSaveable { mutableStateOf(false) }
     var taxError by rememberSaveable { mutableStateOf(false) }
 
-    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var hasLaunchedCamera by rememberSaveable { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(CropImageContract()) {
+        bitmap = getCroppedImage(context.contentResolver, it)
+    }
+
+    LaunchedEffect(Unit) {
+        if (id == null && bitmap == null && !hasLaunchedCamera) {
+            hasLaunchedCamera = true
+            val options = CropImageContractOptions(
+                null, CropImageOptions(
+                    imageSourceIncludeGallery = false,
+                    imageSourceIncludeCamera = true,
+                    fixAspectRatio = true
+                )
+            )
+            launcher.launch(options)
+        }
+    }
 
     LaunchedEffect(id) {
         if (id == null) return@LaunchedEffect
-
-        val data = viewModel.getTagihan(id) ?: return@LaunchedEffect
-
+        val data = mainViewModel.data.value.find { it.id == id } ?: return@LaunchedEffect
         billName = data.namaTagihan
-        amountText = data.totalTagihan.toString()
+        amountText = data.totalTagihan.toInt().toString()
         peopleText = data.jumlahOrang.toString()
         useTax = data.pakaiPajak
-        taxPercentText = if (data.pakaiPajak) {
-            data.persentasePajak.toString()
-        } else {
-            ""
-        }
+        existingImageId = data.imageId
+        taxPercentText = if (data.pakaiPajak) data.persentasePajak.toString() else ""
         result = "Rp ${String.format(Locale.getDefault(), "%,.0f", data.hasilPerOrang)}"
     }
 
@@ -117,96 +148,58 @@ fun CountScreen(
                     navigationIconContentColor = MaterialTheme.colorScheme.primary
                 ),
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.kembali)
-                        )
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 title = {
                     Text(
-                        text = if (id == null) {
-                            stringResource(id = R.string.tambah_tagihan)
-                        } else {
-                            stringResource(id = R.string.ubah_tagihan)
-                        },
+                        text = if (id == null) "Tambah Tagihan" else "Ubah Tagihan",
                         fontWeight = FontWeight.Bold
                     )
                 },
                 actions = {
                     IconButton(
                         onClick = {
-                            billNameError = billName.isBlank()
-
-                            val amount = amountText.toDoubleOrNull()
-                            amountError = amount == null || amount <= 0.0
-
-                            val people = peopleText.toIntOrNull()
-                            peopleError = people == null || people <= 0
-
-                            val taxPct = taxPercentText.toDoubleOrNull() ?: 0.0
-                            taxError = useTax && taxPct < 0.0
-
-                            if (billNameError || amountError || peopleError || taxError) {
-                                Toast.makeText(
-                                    context,
-                                    R.string.invalid,
-                                    Toast.LENGTH_LONG
-                                ).show()
+                            if (id == null && bitmap == null) {
+                                Toast.makeText(context, "Foto wajib ada", Toast.LENGTH_SHORT).show()
                                 return@IconButton
                             }
 
-                            val safeAmount = amount ?: 0.0
+                            billNameError = billName.isBlank()
+                            val amount = amountText.toIntOrNull()
+                            amountError = amount == null || amount <= 0
+                            val people = peopleText.toIntOrNull()
+                            peopleError = people == null || people <= 0
+                            val taxPct = taxPercentText.toDoubleOrNull() ?: 0.0
+                            taxError = useTax && taxPct < 0.0
+
+                            if (billNameError || amountError || peopleError || taxError) return@IconButton
+
+                            val safeAmount = amount ?: 0
                             val safePeople = people ?: 1
-                            val safeTaxPct = if (useTax) taxPct else 0.0
-
-                            val taxAmount = if (useTax) {
-                                safeAmount * (safeTaxPct / 100)
-                            } else {
-                                0.0
-                            }
-
-                            val perPerson = (safeAmount + taxAmount) / safePeople
+                            val taxAmount = if (useTax) safeAmount.toDouble() * (taxPct / 100) else 0.0
+                            val perPerson = (safeAmount.toDouble() + taxAmount) / safePeople
 
                             if (id == null) {
-                                viewModel.insert(
-                                    namaTagihan = billName,
-                                    totalTagihan = safeAmount,
-                                    jumlahOrang = safePeople,
-                                    pakaiPajak = useTax,
-                                    persentasePajak = safeTaxPct,
-                                    hasilPerOrang = perPerson
-                                )
+                                mainViewModel.saveData(user.email, billName, safeAmount, safePeople, useTax, taxPct, perPerson, bitmap!!)
+                                viewModel.insert(billName, safeAmount.toDouble(), safePeople, useTax, taxPct, perPerson)
                             } else {
-                                viewModel.update(
-                                    id = id,
-                                    namaTagihan = billName,
-                                    totalTagihan = safeAmount,
-                                    jumlahOrang = safePeople,
-                                    pakaiPajak = useTax,
-                                    persentasePajak = safeTaxPct,
-                                    hasilPerOrang = perPerson
-                                )
+                                mainViewModel.updateData(user.email, id, billName, safeAmount, safePeople, useTax, taxPct, perPerson, bitmap)
+                                viewModel.update(id, billName, safeAmount.toDouble(), safePeople, useTax, taxPct, perPerson)
                             }
-
                             navController.popBackStack()
                         }
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = stringResource(id = R.string.simpan)
-                        )
+                        Icon(Icons.Filled.Check, contentDescription = null)
                     }
 
                     if (id != null) {
                         DeleteAction(
                             delete = {
-                                showDialog = true
+                                mainViewModel.moveToRecycleBin(user.email, id)
+                                viewModel.delete(id)
+                                navController.popBackStack()
                             }
                         )
                     }
@@ -218,100 +211,86 @@ fun CountScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable {
+                        val options = CropImageContractOptions(
+                            null, CropImageOptions(
+                                imageSourceIncludeGallery = false,
+                                imageSourceIncludeCamera = true,
+                                fixAspectRatio = true
+                            )
+                        )
+                        launcher.launch(options)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        painter = BitmapPainter(bitmap!!.asImageBitmap()),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                } else if (!existingImageId.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(TagihanApi.getImageUrl(existingImageId!!))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+
             OutlinedTextField(
                 value = billName,
-                onValueChange = {
-                    billName = it
-                    billNameError = false
-                },
-                label = {
-                    Text(text = stringResource(id = R.string.nama_tagihan))
-                },
+                onValueChange = { billName = it },
+                label = { Text("Nama Tagihan") },
                 isError = billNameError,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null
-                    )
-                },
-                trailingIcon = {
-                    IconPicker(billNameError, "")
-                },
-                supportingText = {
-                    ErrorHint(billNameError)
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Next
-                ),
+                supportingText = { if (billNameError) Text("Nama tagihan tidak boleh kosong") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = amountText,
-                onValueChange = {
-                    amountText = it
-                    amountError = false
-                },
-                label = {
-                    Text(text = stringResource(id = R.string.total_bill))
-                },
+                onValueChange = { amountText = it },
+                label = { Text("Total Bill") },
                 isError = amountError,
-                leadingIcon = {
-                    Text(
-                        text = "Rp",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 16.dp, end = 8.dp)
-                    )
-                },
-                trailingIcon = {
-                    IconPicker(amountError, "")
-                },
-                supportingText = {
-                    ErrorHint(amountError)
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                ),
+                supportingText = { if (amountError) Text("Total bill harus lebih dari 0") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = peopleText,
-                onValueChange = {
-                    peopleText = it
-                    peopleError = false
-                },
-                label = {
-                    Text(text = stringResource(id = R.string.jumlah_orang))
-                },
+                onValueChange = { peopleText = it },
+                label = { Text("Jumlah Orang") },
                 isError = peopleError,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null
-                    )
-                },
-                trailingIcon = {
-                    IconPicker(peopleError, "Orang")
-                },
-                supportingText = {
-                    ErrorHint(peopleError)
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                ),
+                supportingText = { if (peopleError) Text("Jumlah orang harus lebih dari 0") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -323,239 +302,101 @@ fun CountScreen(
                     onClick = {
                         useTax = false
                         taxPercentText = ""
-                        taxError = false
+                        result = ""
                     },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (!useTax) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.Gray.copy(alpha = 0.5f)
-                        }
-                    ),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (!useTax) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            Color.Transparent
-                        }
-                    )
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.tanpa_pajak),
-                        color = if (!useTax) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            Color.Gray
-                        }
-                    )
+                    Text("Tanpa Pajak")
                 }
-
                 OutlinedButton(
-                    onClick = {
-                        useTax = true
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (useTax) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.Gray.copy(alpha = 0.5f)
-                        }
-                    ),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (useTax) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            Color.Transparent
-                        }
-                    )
+                    onClick = { useTax = true },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.pajak_opsi),
-                        color = if (useTax) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            Color.Gray
-                        }
-                    )
+                    Text("Pajak")
                 }
             }
 
             if (useTax) {
                 OutlinedTextField(
                     value = taxPercentText,
-                    onValueChange = {
-                        taxPercentText = it
-                        taxError = false
-                    },
-                    label = {
-                        Text(text = stringResource(id = R.string.persentase_pajak))
-                    },
+                    onValueChange = { taxPercentText = it },
+                    label = { Text("Persentase Pajak (%)") },
                     isError = taxError,
-                    trailingIcon = {
-                        IconPicker(taxError, "%")
-                    },
-                    supportingText = {
-                        ErrorHint(taxError)
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
+                    supportingText = { if (taxError) Text("Persentase pajak tidak valid") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
                 onClick = {
-                    billNameError = billName.isBlank()
-
-                    val amount = amountText.toDoubleOrNull()
-                    amountError = amount == null || amount <= 0.0
-
+                    val amount = amountText.toIntOrNull()
                     val people = peopleText.toIntOrNull()
-                    peopleError = people == null || people <= 0
-
                     val taxPct = taxPercentText.toDoubleOrNull() ?: 0.0
+
+                    amountError = amount == null || amount <= 0
+                    peopleError = people == null || people <= 0
                     taxError = useTax && taxPct < 0.0
 
-                    if (billNameError || amountError || peopleError || taxError) {
-                        result = ""
-                        return@Button
-                    }
+                    if (amountError || peopleError || taxError) return@Button
 
-                    val safeAmount = amount ?: 0.0
-                    val safePeople = people ?: 1
-                    val safeTaxPct = if (useTax) taxPct else 0.0
-
-                    val taxAmount = if (useTax) {
-                        safeAmount * (safeTaxPct / 100)
-                    } else {
-                        0.0
-                    }
-
-                    val perPerson = (safeAmount + taxAmount) / safePeople
+                    val safeAmount = amount!!
+                    val safePeople = people!!
+                    val taxAmount = if (useTax) safeAmount.toDouble() * (taxPct / 100) else 0.0
+                    val perPerson = (safeAmount.toDouble() + taxAmount) / safePeople
 
                     result = "Rp ${String.format(Locale.getDefault(), "%,.0f", perPerson)}"
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = stringResource(id = R.string.count),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Text("Hitung")
             }
 
             if (result.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Per orang bayar:",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "Per orang membayar",
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
                         Text(
                             text = result,
-                            style = MaterialTheme.typography.headlineLarge,
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
                         )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        val message = "Patungan $billName:\nTotal per orang jadi $result. Buruan transfer ya!"
-
-                        Button(
-                            onClick = {
-                                shareData(context, message)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(vertical = 12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = stringResource(id = R.string.share))
-                        }
                     }
                 }
             }
-        }
-
-        if (id != null && showDialog) {
-            DisplayAlertDialog(
-                onDismissRequest = {
-                    showDialog = false
-                },
-                onConfirmation = {
-                    showDialog = false
-                    viewModel.delete(id)
-                    navController.popBackStack()
-                }
-            )
         }
     }
 }
 
 @Composable
-fun DeleteAction(
-    delete: () -> Unit
-) {
+fun DeleteAction(delete: () -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    IconButton(
-        onClick = {
-            expanded = true
-        }
-    ) {
-        Icon(
-            imageVector = Icons.Filled.MoreVert,
-            contentDescription = stringResource(id = R.string.lainnya),
-            tint = MaterialTheme.colorScheme.primary
-        )
+    IconButton(onClick = { expanded = true }) {
+        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = null)
     }
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = {
-            expanded = false
-        }
-    ) {
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(
-            text = {
-                Text(text = stringResource(id = R.string.hapus))
-            },
+            text = { Text("Hapus") },
             onClick = {
                 expanded = false
                 delete()
@@ -564,49 +405,12 @@ fun DeleteAction(
     }
 }
 
-@Preview(showBackground = true)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-fun CountScreenPreview() {
-    AsesmenMobpro1Theme {
-        CountScreen(
-            navController = rememberNavController()
-        )
-    }
-}
-
-@Composable
-fun ErrorHint(isError: Boolean) {
-    if (isError) {
-        Text(text = stringResource(R.string.error_message))
-    }
-}
-
-@Composable
-fun IconPicker(
-    isError: Boolean,
-    unit: String
-) {
-    if (isError) {
-        Icon(
-            imageVector = Icons.Filled.Warning,
-            contentDescription = null
-        )
-    } else if (unit.isNotEmpty()) {
-        Text(text = unit)
-    }
-}
-
-private fun shareData(
-    context: Context,
-    message: String
-) {
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text" + Char(47) + "plain"
-        putExtra(Intent.EXTRA_TEXT, message)
-    }
-
-    if (shareIntent.resolveActivity(context.packageManager) != null) {
-        context.startActivity(shareIntent)
+private fun getCroppedImage(resolver: ContentResolver, result: CropImageView.CropResult): Bitmap? {
+    if (!result.isSuccessful) return null
+    val uri = result.uriContent ?: return null
+    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        MediaStore.Images.Media.getBitmap(resolver, uri)
+    } else {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, uri))
     }
 }

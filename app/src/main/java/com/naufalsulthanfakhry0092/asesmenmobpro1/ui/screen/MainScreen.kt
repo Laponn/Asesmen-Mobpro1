@@ -1,13 +1,8 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
-import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.provider.MediaStore
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,10 +66,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -102,12 +94,15 @@ fun MainScreen(navController: NavHostController) {
     val userDataStore = UserDataStore(context)
     val user by userDataStore.userFlow.collectAsState(User())
     val coroutineScope = rememberCoroutineScope()
-    var showDialog by remember{ mutableStateOf(false) }
 
-    var bitmap: Bitmap? by remember {mutableStateOf(null)}
-    val launcher = rememberLauncherForActivityResult(CropImageContract()) {
-        bitmap = getCroppedImage(context.contentResolver, it)
-    }
+    var showDialog by remember { mutableStateOf(false) }
+
+    val factory = ViewModelFactory(context)
+    val viewModel: MainViewModel = viewModel(
+        factory = factory,
+        viewModelStoreOwner = context as ComponentActivity
+    )
+    val errorMessage by viewModel.errorMessage
 
     Scaffold(
         topBar = {
@@ -176,14 +171,7 @@ fun MainScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val options = CropImageContractOptions(
-                        null, CropImageOptions(
-                            imageSourceIncludeGallery = false,
-                            imageSourceIncludeCamera = true,
-                            fixAspectRatio = true
-                        )
-                    )
-                    launcher.launch(options)
+                    navController.navigate(Screen.FormBaru.route)
                 }
             ) {
                 Icon(
@@ -195,33 +183,44 @@ fun MainScreen(navController: NavHostController) {
         }
     ) { paddingValues ->
         ScreenContent(
+            viewModel = viewModel,
+            userId = user.email,
             showList = showList,
             modifier = Modifier.padding(paddingValues),
             navController = navController
         )
+
         if (showDialog) {
             ProfilDialog(
                 user = user,
                 onDismissRequest = { showDialog = false },
-            ){
+            ) {
                 CoroutineScope(Dispatchers.IO).launch { signOut(context, userDataStore) }
                 showDialog = false
             }
+        }
+
+        if (errorMessage != null) {
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+            viewModel.clearMessage()
         }
     }
 }
 
 @Composable
 fun ScreenContent(
+    viewModel: MainViewModel,
+    userId: String,
     showList: Boolean,
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
-    val context = LocalContext.current
-    val factory = ViewModelFactory(context)
-    val viewModel: MainViewModel = viewModel(factory = factory)
     val data by viewModel.data.collectAsState()
     val status by viewModel.status.collectAsState()
+
+    LaunchedEffect(userId) {
+        viewModel.retrieveData(userId)
+    }
 
     when (status) {
         ApiStatus.LOADING -> {
@@ -284,7 +283,7 @@ fun ScreenContent(
             ) {
                 Text(text = stringResource(id = R.string.error))
                 Button(
-                    onClick = { viewModel.retrieveData() },
+                    onClick = { viewModel.retrieveData(userId) },
                     modifier = Modifier.padding(top = 16.dp),
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
                 ) {
@@ -457,7 +456,6 @@ private suspend fun signIn(context: Context, dataStore: UserDataStore) {
         val result = credentialManager.getCredential(context, request)
         handleSignIn(result, dataStore)
     } catch (e: GetCredentialException) {
-        Log.e("SIGN-IN", "Error: ${e.errorMessage}")
     }
 }
 
@@ -474,10 +472,7 @@ private suspend fun handleSignIn(result: GetCredentialResponse, dataStore: UserD
             val photoUrl = googleId.profilePictureUri.toString()
             dataStore.saveData(User(nama, email, photoUrl))
         } catch (e: GoogleIdTokenParsingException) {
-            Log.e("SIGN-IN", "Error: ${e.message}")
         }
-    } else {
-        Log.e("SIGN-IN", "Error: unrecognized custom credential type.")
     }
 }
 
@@ -489,24 +484,5 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
         )
         dataStore.saveData(User())
     } catch (e: ClearCredentialException) {
-        Log.e("SIGN-IN", "Error: ${e.errorMessage}")
-    }
-}
-
-private fun getCroppedImage(
-    resolver: ContentResolver,
-    result: CropImageView.CropResult
-): Bitmap?{
-    if(!result.isSuccessful){
-        Log.e("IMAGE", "Error: ${result.error}")
-        return null
-    }
-    val uri = result.uriContent ?: return null
-
-    return if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-        MediaStore.Images.Media.getBitmap(resolver, uri)
-    }else{
-        val source = ImageDecoder.createSource(resolver, uri)
-        ImageDecoder.decodeBitmap(source)
     }
 }
