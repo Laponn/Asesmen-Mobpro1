@@ -1,7 +1,13 @@
 package com.naufalsulthanfakhry0092.asesmenmobpro1.ui.screen
 
+import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,6 +70,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -93,6 +103,11 @@ fun MainScreen(navController: NavHostController) {
     val user by userDataStore.userFlow.collectAsState(User())
     val coroutineScope = rememberCoroutineScope()
     var showDialog by remember{ mutableStateOf(false) }
+
+    var bitmap: Bitmap? by remember {mutableStateOf(null)}
+    val launcher = rememberLauncherForActivityResult(CropImageContract()) {
+        bitmap = getCroppedImage(context.contentResolver, it)
+    }
 
     Scaffold(
         topBar = {
@@ -161,7 +176,14 @@ fun MainScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate(Screen.FormBaru.route)
+                    val options = CropImageContractOptions(
+                        null, CropImageOptions(
+                            imageSourceIncludeGallery = false,
+                            imageSourceIncludeCamera = true,
+                            fixAspectRatio = true
+                        )
+                    )
+                    launcher.launch(options)
                 }
             ) {
                 Icon(
@@ -468,5 +490,23 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
         dataStore.saveData(User())
     } catch (e: ClearCredentialException) {
         Log.e("SIGN-IN", "Error: ${e.errorMessage}")
+    }
+}
+
+private fun getCroppedImage(
+    resolver: ContentResolver,
+    result: CropImageView.CropResult
+): Bitmap?{
+    if(!result.isSuccessful){
+        Log.e("IMAGE", "Error: ${result.error}")
+        return null
+    }
+    val uri = result.uriContent ?: return null
+
+    return if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+        MediaStore.Images.Media.getBitmap(resolver, uri)
+    }else{
+        val source = ImageDecoder.createSource(resolver, uri)
+        ImageDecoder.decodeBitmap(source)
     }
 }
